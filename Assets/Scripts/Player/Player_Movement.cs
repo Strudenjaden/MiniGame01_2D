@@ -23,6 +23,8 @@ public class Player_Movement : MonoBehaviour
     public bool jump;
     [Tooltip("Is the player climbing?")]
     public bool climbing;
+    [Tooltip("Is the player on the ladder?")]
+    public bool onLadder;
 
     [Header("Ladder Raycast")]
     public float distance;
@@ -44,7 +46,7 @@ public class Player_Movement : MonoBehaviour
         movement = Input.GetAxisRaw("Horizontal") * speed;
 
         //Making player jump when isn't on a Ladder
-        if (Input.GetKeyDown(KeyCode.Space) && !climbing)
+        if (Input.GetKeyDown(KeyCode.Space) && !climbing && !onLadder)
         {
             jump = true;
         }
@@ -56,6 +58,7 @@ public class Player_Movement : MonoBehaviour
         //Movement
         Movement();
 
+        //Climb ladders
         Climbing();
         
     }
@@ -70,11 +73,13 @@ public class Player_Movement : MonoBehaviour
 
     public void Climbing()
     {
-        Debug.DrawRay(transform.position, Vector2.up * distance, Color.green);
+        
         RaycastHit2D hitLadder = Physics2D.Raycast(transform.position, Vector2.down, distance, whatIsLadder); //What is +
 
         if (hitLadder.collider != null)
         {
+            onLadder = true;
+            Debug.DrawRay(transform.position, Vector2.down * distance, Color.green);
             Debug.Log("I'm on the ladder");
             if (Input.GetKey(KeyCode.W))
             {
@@ -84,15 +89,17 @@ public class Player_Movement : MonoBehaviour
             else
             {
                 //If is on the ladder the player keep his position (don't go down) and lowers his speed.
-                rb.velocity = new Vector2(rb.velocity.x, 0.981f); //0.981f works for me. The player stays on the same position but gravity keep forcing to go down the player.
+                rb.velocity = new Vector2(rb.velocity.x / 2, 0.981f); //0.981f works for me. The player stays on the same position but gravity keep forcing to go down the player.
                 climbing = false;
                 //rb.gravityScale = firstGravity;
             }
         }
         else
         {
+            Debug.DrawRay(transform.position, Vector2.down * distance, Color.red);
             Debug.Log("I'm not on ladder");
             climbing = false;
+            onLadder = false;
         }
 
         if (climbing == true)
