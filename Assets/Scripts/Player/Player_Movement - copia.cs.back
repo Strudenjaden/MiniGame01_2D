@@ -1,0 +1,152 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Player_Movement : MonoBehaviour
+{
+    [Header("Player controllers")]
+    public CharacterController2D character;
+    public Rigidbody2D rb;
+    [Tooltip("Normal gravity of the player")]
+    public float firstGravity;
+
+    [Header("Speeds")]
+    [Tooltip("Player's speed")]
+    public float speed = 25f;
+    [Tooltip("Player's speed when is climbing the ladder")]
+    public float climbSpeed = 5f;
+    [Tooltip("The movement of the player. Input * speed")]
+    public float movement;
+
+    [Header("Player boolean actions")]
+    [Tooltip("Is the player jumping?")]
+    public bool jump;
+    [Tooltip("Is the player climbing?")]
+    public bool climbing;
+    [Tooltip("Is the player climbing up?")]
+    public bool climbingUp;
+    [Tooltip("Is the player climbing down?")]
+    public bool climbingdDown;
+    [Tooltip("Is the player on the ladder?")]
+    public bool onLadder;
+    public bool onAir;
+    [Header("Ladder Raycast")]
+    public float distance;
+    public LayerMask whatIsLadder;
+
+    void Start()
+    {
+        //At the start we save the first value for gravity and dont change it wrongly.
+        firstGravity = rb.gravityScale;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        //Inputs
+        movement = Input.GetAxisRaw("Horizontal") * speed;
+
+        //Making player jump when isn't on a Ladder
+        if (Input.GetButton("Jump") && !climbing && !onLadder && !onAir)
+        {
+            jump = true;
+            //onAir = true;
+        }
+
+        if (rb.velocity.y == 0f)
+        {
+            onAir = false;
+
+        }
+        else
+        {
+            onAir = true;
+        }
+        //Debug.Log(rb.position.y + " || " + rb.velocity.y);
+    }
+
+    void FixedUpdate()
+    {
+        //Movement
+        Movement();
+
+        //Climb ladders
+        Climbing();
+
+    }
+
+    public void Movement()
+    {
+        character.Move(movement * Time.fixedDeltaTime, false, jump);
+        //Debug.Log(rb.velocity);
+        jump = false;
+
+    }
+
+    public void Climbing()
+    {
+
+        RaycastHit2D hitLadder = Physics2D.Raycast(transform.position, Vector2.down, distance, whatIsLadder); //What is +
+
+        if (hitLadder.collider != null)
+        {
+            onLadder = true;
+            Debug.DrawRay(transform.position, Vector2.down * distance, Color.green);
+            //Debug.Log("I'm on the ladder");
+            if (Input.GetKey("up") && onLadder)
+            {
+
+                climbingUp = true;
+            }
+            else
+            {
+                //If is on the ladder the player keep his position (don't go down) and lowers his speed.
+                rb.velocity = new Vector2(rb.velocity.x, 0.981f); //0.981f works for me. The player stays on the same position but gravity keep forcing to go down the player.
+                climbing = false;
+                climbingUp = false;
+            }
+
+            if (Input.GetKey("down"))
+            {
+                climbingdDown = true;
+            }
+            else
+            {
+                climbing = false;
+                climbing = false;
+            }
+        }
+        else
+        {
+            Debug.DrawRay(transform.position, Vector2.down * distance, Color.red);
+            //Debug.Log("I'm not on ladder");
+
+            climbing = false; //Not climbing anymore because isn't on the ladder.
+            climbingUp = false; //Reach the top of the ladder.
+            climbingdDown = false; // Reach the bottom of the ladder;
+            onLadder = false;
+        }
+
+        if (climbingUp == true)
+        {
+            rb.velocity = new Vector2(rb.velocity.x / 2, climbSpeed);
+            rb.gravityScale = 0f;
+        }
+        else
+        {
+            rb.gravityScale = firstGravity;
+        }
+
+        if (climbingdDown == true)
+        {
+            rb.velocity = new Vector2(rb.velocity.x / 2, -climbSpeed);
+            rb.gravityScale = 0f;
+            onLadder = false;
+        }
+        else
+        {
+           
+        }
+    }
+}
+
